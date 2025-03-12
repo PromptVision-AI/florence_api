@@ -3,14 +3,12 @@ version: '3'
 services:
   florence-api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - /home/diego/Documents/master/S4/Industry_P/codes/florence2/Florence-2-large:/app/Florence-2-large
     environment:
-      - MODEL_PATH=/app/Florence-2-large
+      - MODEL_PATH=/app/model
     deploy:
       resources:
         reservations:
