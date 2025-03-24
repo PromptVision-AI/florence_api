@@ -79,4 +79,33 @@ def create_mask_image(image, segmentation_result):
     
     # Convert to numpy array
     mask_array = np.array(mask)
-    return mask_array 
+    return mask_array
+
+def create_detection_visualization(image, detection_result):
+    """Create a visualization of the object detection result with bounding boxes and centroids."""
+    # Convert image to RGBA for drawing
+    vis_image = image.convert('RGBA')
+    draw = ImageDraw.Draw(vis_image)
+    
+    # Colors for different objects
+    colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (255,0,255)]
+    
+    # Draw bounding boxes and centroids
+    for i, (bbox, centroid, label) in enumerate(zip(detection_result['bboxes'], 
+                                                  detection_result['centroids'],
+                                                  detection_result['labels'])):
+        color = colors[i % len(colors)]
+        
+        # Draw bounding box
+        x1, y1, x2, y2 = bbox
+        draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
+        
+        # Draw centroid
+        cx, cy = centroid
+        radius = 5
+        draw.ellipse([cx-radius, cy-radius, cx+radius, cy+radius], fill=color)
+        
+        # Draw label
+        draw.text((x1, y1-20), label, fill=color)
+    
+    return vis_image 

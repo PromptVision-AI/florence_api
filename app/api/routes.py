@@ -5,7 +5,7 @@ import io
 from contextlib import asynccontextmanager
 
 from app.core.model import load_model, cleanup_model, run_segmentation, run_object_detection, model
-from app.utils.visualization import create_visualization, create_mask_image
+from app.utils.visualization import create_visualization, create_mask_image, create_detection_visualization
 from app.services.cloudinary import configure_cloudinary, upload_image_to_cloudinary
 
 # Configure Cloudinary
@@ -128,6 +128,7 @@ async def detect_objects(
     
     Returns:
     - Original image URL from Cloudinary
+    - Annotated image URL from Cloudinary (with bounding boxes and centroids)
     - List of bounding boxes [x1, y1, x2, y2]
     - List of centroids [cx, cy] for each box
     - List of labels for each detected object
@@ -146,11 +147,23 @@ async def detect_objects(
         # Run object detection
         detection_result = run_object_detection(image, prompt)
         
+        # Create visualization with bounding boxes and centroids
+        vis_image = create_detection_visualization(image, detection_result)
+        
+        # Convert visualization to bytes for Cloudinary upload
+        vis_buffer = io.BytesIO()
+        vis_image.save(vis_buffer, format="PNG")
+        vis_buffer.seek(0)
+        
+        # Upload visualization to Cloudinary
+        vis_url = upload_image_to_cloudinary(vis_buffer)
+        
         # Prepare response
         response = {
             "success": True,
             "prompt": prompt,
             "original_image_url": original_url,
+            "annotated_image_url": vis_url,
             "bounding_boxes": detection_result['bboxes'],
             "centroids": detection_result['centroids'],
             "labels": detection_result['labels']
