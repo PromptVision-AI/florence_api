@@ -66,6 +66,38 @@ def run_segmentation(image, prompt):
     
     return parsed_answer['<REFERRING_EXPRESSION_SEGMENTATION>']
 
+def run_image_captioning(image):
+    """Run the Florence-2 model for captioning."""
+    # Prepare task prompt for referring expression segmentation
+    task_prompt = '<MORE_DETAILED_CAPTION>'
+    
+    # Process the input
+    inputs = processor(
+        text=task_prompt,
+        images=image,
+        return_tensors="pt"
+    ).to('cuda', torch.float16)
+    
+    # Generate output
+    generated_ids = model.generate(
+        input_ids=inputs['input_ids'].cuda(),
+        pixel_values=inputs["pixel_values"].cuda(),
+        max_new_tokens=1024,
+        early_stopping=False,
+        do_sample=False,
+        num_beams=5,
+    )
+    
+    # Decode and post-process
+    generated_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+    parsed_answer = processor.post_process_generation(
+        generated_text,
+        task=task_prompt,
+        image_size=(image.width, image.height)
+    )
+    
+    return parsed_answer['<MORE_DETAILED_CAPTION>']
+
 def run_object_detection(image, prompt):
     """Run the Florence-2 model for object detection.
     

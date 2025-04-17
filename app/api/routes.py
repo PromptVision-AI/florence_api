@@ -4,7 +4,7 @@ from PIL import Image
 import io
 from contextlib import asynccontextmanager
 
-from app.core.model import load_model, cleanup_model, run_segmentation, run_object_detection, model
+from app.core.model import load_model, cleanup_model, run_segmentation, run_image_captioning, run_object_detection, model
 from app.utils.visualization import create_visualization, create_mask_image, create_detection_visualization
 from app.services.cloudinary import configure_cloudinary, upload_image_to_cloudinary
 
@@ -171,6 +171,30 @@ async def detect_objects(
         
         return response
     
+    except Exception as e:
+        print(f"Error processing image: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+
+
+@app.post("/caption")
+async def caption_image(
+    file: UploadFile = File(...),
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    try:
+        # Read and process the image
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        
+        caption = run_image_captioning(image)
+        
+        return {
+            "success": True,
+            "caption": caption
+        }
+        
     except Exception as e:
         print(f"Error processing image: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
